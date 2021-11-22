@@ -1,0 +1,151 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Selections</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/semantic-ui/2.2.10/semantic.min.css">
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"
+            integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+            crossorigin="anonymous">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js">
+    </script>
+</head>
+<body>
+    <h2 align="center" style="margin-top:2em;">List of selections</h2>
+    <table align="center" style="margin-top:2em" class="table table-condensed table-striped  col-md-6">
+        <thead><tr><th>Department</th><th>Group</th><th></th></tr></thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <div style="margin-top:2em;" class="container ">
+        <div class="row">
+            <div class="col-sm-2"></div>
+            <div style="display:none" id="segment" class="col-sm ui segment">
+                <h2 align="center" id="name"></h2>
+                <div style="margin-top:2em;" class="container ">
+                    <div class="row">
+                        <div class="col-sm">
+                            <h4 align="center">Criteria</h4>
+                            <ul style="margin-top:2em;" align="center" id="parameters"></ul>
+                        </div>
+                        <div class="col-sm">
+                            <h4 align="center">Employee</h4>
+                            <ul style="margin-top:2em;" align="center" id="userslist"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2"></div>
+        </div>
+    </div>
+
+    <script>
+        GetGroups();
+        async function GetGroups() {
+            const response = await fetch("/api/Groups", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const groups = await response.json();
+                let rows = document.querySelector("tbody");
+                groups.forEach(group => {
+                    rows.append(row(group));
+                });
+            }
+        }
+        // создание строки для таблицы
+        function row(group) {
+
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", group.id);
+
+            const DepartmentIdTd = document.createElement("td");
+            DepartmentIdTd.append(group.department);
+            tr.append(DepartmentIdTd);
+
+            const nameTd = document.createElement("td");
+            nameTd.append(group.group);
+            tr.append(nameTd);
+
+
+            const linksTd = document.createElement("td");
+
+            const editLink = document.createElement("a");
+            editLink.setAttribute("data-id", group.id);
+            editLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            editLink.append("Просмотреть");
+            editLink.addEventListener("click", e => {
+
+                document.getElementById('segment').style.display = 'block';
+                e.preventDefault();
+                GetGroupName(group.id);
+                GetParametersUsers(group.id);
+                GetGroupParameters(group.id);
+
+            });
+            linksTd.append(editLink);
+            tr.appendChild(linksTd);
+
+            return tr;
+        }
+        async function GetGroupName(id) {
+            const response = await fetch("/api/groups/" + id, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const group = await response.json();
+                document.getElementById("name").innerHTML = group.name;
+            }
+        }
+        async function GetGroupParameters(id) {
+            const response = await fetch("/api/parametersgroups/" + id, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const params = await response.json();
+                let list = document.getElementById("parameters");
+                list.innerHTML = "";
+                params.forEach(param => {
+                    list.append(item(param));
+                });
+            }
+        }
+        function item(param) {
+            const li = document.createElement("li");
+            li.append(param.parameterName);
+            li.append(" - ");
+            li.append(param.mark);
+            return li;
+        }
+        async function GetParametersUsers(id) {
+            const response = await fetch("/api/users/" + id, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const users = await response.json();
+                let list = document.getElementById("userslist");
+                list.innerHTML = "";
+
+                users.forEach(user => {
+                    list.append(useritem(user));
+                });
+            }
+        }
+        function useritem(user) {
+            const li = document.createElement("li");
+            li.append(user.name);
+            li.append(" ");
+            li.append(user.sourName);
+            return li;
+        }
+    </script>
+</body>
+</html>
